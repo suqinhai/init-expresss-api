@@ -44,14 +44,13 @@ const config = {
         paranoid: false     // 软删除功能，设为true时会增加deletedAt字段
     },
     // 日志配置
-    logging: false,
-    // logging: process.env.NODE_ENV === 'dev' 
-    //     ? (sql, timing) => logger.debug(sql, { 
-    //         category: 'DATABASE', 
-    //         duration: timing,
-    //         query: sql.substr(0, 500) // 避免过长日志
-    //       }) 
-    //     : false,
+    logging: process.env.NODE_ENV === 'dev' 
+        ? (sql, timing) => logger.debug(sql, { 
+            category: 'DATABASE', 
+            duration: timing,
+            query: sql.substr(0, 500) // 避免过长日志
+          }) 
+        : false,
     // 查询选项
     query: {
         raw: false,         // 默认不使用原始查询结果
