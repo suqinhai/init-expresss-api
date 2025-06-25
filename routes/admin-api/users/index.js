@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { adminApiMiddleware } = require('../../../../middleware/adminApi');
+const { adminApiMiddleware } = require('../../../middleware/adminApi');
 
 /**
  * @swagger
@@ -105,7 +105,7 @@ const { adminApiMiddleware } = require('../../../../middleware/adminApi');
 router.get('/', adminApiMiddleware.withPermissions(['user:read']), async function(req, res) {
   try {
     const { page = 1, limit = 20, status, search } = req.query;
-
+    
     // 示例实现：获取用户列表
     // 这里应该从数据库查询，现在返回模拟数据
     const mockUsers = [
@@ -128,23 +128,23 @@ router.get('/', adminApiMiddleware.withPermissions(['user:read']), async functio
         last_login: '2023-11-01T12:00:00Z'
       }
     ];
-
+    
     // 应用筛选条件
     let filteredUsers = mockUsers;
     if (status) {
       filteredUsers = filteredUsers.filter(user => user.status === status);
     }
     if (search) {
-      filteredUsers = filteredUsers.filter(user =>
+      filteredUsers = filteredUsers.filter(user => 
         user.username.includes(search) || user.email.includes(search)
       );
     }
-
+    
     // 分页处理
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + parseInt(limit);
     const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
-
+    
     res.sendSuccess('获取用户列表成功', {
       data: {
         users: paginatedUsers,

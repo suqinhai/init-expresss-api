@@ -253,7 +253,7 @@ const userApiSwaggerOptions = {
     }
   },
   apis: [
-    path.join(__dirname, './routes/api/user/**/*.js')
+    path.join(__dirname, './routes/user-api/**/*.js')
   ]
 };
 
@@ -273,7 +273,7 @@ const adminApiSwaggerOptions = {
     }
   },
   apis: [
-    path.join(__dirname, './routes/api/admin/**/*.js')
+    path.join(__dirname, './routes/admin-api/**/*.js')
   ]
 };
 

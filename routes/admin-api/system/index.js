@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { adminApiMiddleware } = require('../../../../middleware/adminApi');
+const { adminApiMiddleware } = require('../../../middleware/adminApi');
 
 /**
  * @swagger

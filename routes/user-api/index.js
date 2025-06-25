@@ -58,7 +58,7 @@ router.get('/', function(req, res) {
 });
 
 // 引入用户端专用中间件
-const { userApiMiddleware } = require('../../../middleware/userApi');
+const { userApiMiddleware } = require('../../middleware/userApi');
 
 // 应用用户端基础中间件到所有路由
 router.use(userApiMiddleware.base);

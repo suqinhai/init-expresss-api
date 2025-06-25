@@ -58,7 +58,7 @@ router.get('/', function(req, res) {
 });
 
 // 引入管理端专用中间件
-const { adminApiMiddleware } = require('../../../middleware/adminApi');
+const { adminApiMiddleware } = require('../../middleware/adminApi');
 
 // 应用管理端基础中间件到所有路由
 router.use(adminApiMiddleware.base);
