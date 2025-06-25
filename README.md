@@ -109,7 +109,9 @@ make dev
 
 5. **访问应用**
 - API服务: http://localhost:3000
-- API文档: http://localhost:3000/api-docs
+- 通用API文档: http://localhost:3000/api-docs
+- 用户端API文档: http://localhost:3000/api-docs/user
+- 管理端API文档: http://localhost:3000/api-docs/admin
 - 健康检查: http://localhost:3000/health
 - MongoDB测试: http://localhost:3000/mongodb-test
 
@@ -204,6 +206,52 @@ Redis缓存支持多级TTL配置：
 - **输入验证**: 数据校验和清理
 - **JWT认证**: 安全的用户认证
 - **密码加密**: bcrypt哈希加密
+
+## 🔗 API接口分类
+
+本项目支持三种类型的API接口，满足不同场景的需求：
+
+### 用户端接口 (`/api/user/*`)
+- **目标用户**: 普通终端用户
+- **认证方式**: JWT令牌认证（部分接口支持可选认证）
+- **限流策略**: 相对宽松（每15分钟1000次请求）
+- **功能范围**: 用户认证、个人资料管理、基础业务功能
+- **API文档**: http://localhost:3000/api-docs/user
+
+**示例接口**:
+```
+POST /api/user/auth/login     # 用户登录
+GET  /api/user/profile        # 获取个人资料
+PUT  /api/user/profile        # 更新个人资料
+```
+
+### 管理端接口 (`/api/admin/*`)
+- **目标用户**: 系统管理员
+- **认证方式**: 管理员JWT令牌认证（严格权限验证）
+- **限流策略**: 相对严格（每15分钟500次请求）
+- **功能范围**: 用户管理、系统管理、数据统计、敏感操作
+- **API文档**: http://localhost:3000/api-docs/admin
+
+**示例接口**:
+```
+GET    /api/admin/users           # 获取用户列表
+PUT    /api/admin/users/:id/status # 更新用户状态
+GET    /api/admin/system/info     # 获取系统信息
+POST   /api/admin/system/cache/clear # 清除系统缓存
+```
+
+### 通用接口 (`/*`)
+- **目标用户**: 所有用户
+- **认证方式**: 无需认证或基础认证
+- **功能范围**: 健康检查、基础信息、公共功能
+- **API文档**: http://localhost:3000/api-docs
+
+**示例接口**:
+```
+GET /health           # 健康检查
+GET /mongodb-test     # MongoDB连接测试
+GET /cache-demo       # 缓存演示
+```
 
 ## 🌍 国际化
 

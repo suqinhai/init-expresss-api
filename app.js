@@ -14,7 +14,7 @@ var { requestLogger, logger } = require('./common/logger'); // 直接从logger�
 var { sequelize, mongodb, sendSuccess, sendError, sendBadRequest, sendUnauthorized, sendResponse, initI18n, createMiddleware } = require('./common/index')
 var { globalLimiter } = require('./middleware');
 
-var indexRouter = require('./routes/index');
+// var indexRouter = require('./routes/index');
 var app = express();
 
 // 初始化i18n和数据库连接
@@ -237,11 +237,68 @@ const swaggerOptions = {
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
-// 设置Swagger UI路由
+// 创建用户端API文档配置
+const userApiSwaggerOptions = {
+  ...swaggerOptions,
+  definition: {
+    ...swaggerOptions.definition,
+    info: {
+      title: '用户端API文档',
+      version: '1.0.0',
+      description: '用户端API接口文档，提供面向普通用户的功能接口',
+      contact: {
+        name: '技术支持',
+        email: 'support@example.com'
+      }
+    }
+  },
+  apis: [
+    path.join(__dirname, './routes/api/user/**/*.js')
+  ]
+};
+
+// 创建管理端API文档配置
+const adminApiSwaggerOptions = {
+  ...swaggerOptions,
+  definition: {
+    ...swaggerOptions.definition,
+    info: {
+      title: '管理端API文档',
+      version: '1.0.0',
+      description: '管理端API接口文档，提供面向管理员的管理功能接口',
+      contact: {
+        name: '技术支持',
+        email: 'support@example.com'
+      }
+    }
+  },
+  apis: [
+    path.join(__dirname, './routes/api/admin/**/*.js')
+  ]
+};
+
+const userApiSwaggerSpec = swaggerJsdoc(userApiSwaggerOptions);
+const adminApiSwaggerSpec = swaggerJsdoc(adminApiSwaggerOptions);
+
+// 设置通用Swagger UI路由
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
   customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: '后台API文档'
+  customSiteTitle: '通用API文档'
+}));
+
+// 设置用户端Swagger UI路由
+app.use('/api-docs/user', swaggerUi.serve, swaggerUi.setup(userApiSwaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: '用户端API文档'
+}));
+
+// 设置管理端Swagger UI路由
+app.use('/api-docs/admin', swaggerUi.serve, swaggerUi.setup(adminApiSwaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: '管理端API文档'
 }));
 
 // 提供Swagger JSON端点
@@ -250,9 +307,22 @@ app.get('/api-docs.json', (req, res) => {
   res.send(swaggerSpec);
 });
 
-console.log('Swagger文档已启用: http://localhost:3000/api-docs');
+app.get('/api-docs/user.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(userApiSwaggerSpec);
+});
 
-app.use('/', indexRouter);
+app.get('/api-docs/admin.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(adminApiSwaggerSpec);
+});
+
+console.log('Swagger文档已启用:');
+console.log('  通用API文档: http://localhost:3000/api-docs');
+console.log('  用户端API文档: http://localhost:3000/api-docs/user');
+console.log('  管理端API文档: http://localhost:3000/api-docs/admin');
+
+// app.use('/', indexRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {

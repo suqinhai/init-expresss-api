@@ -383,8 +383,8 @@ router.post('/mongodb-test/create', async function(req, res) {
   }
 });
 
-var userRouter = require('./users');
+var apiRouter = require('./api');
 
-router.use('/users', userRouter);
+router.use('/api', apiRouter);
 
 module.exports = router;
