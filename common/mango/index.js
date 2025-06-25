@@ -194,6 +194,16 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 
+// 初始化MongoDB连接
+(async () => {
+    try {
+        await connectMongoDB();
+        console.log('MongoDB connection initialized successfully');
+    } catch (error) {
+        console.warn('MongoDB connection failed, continuing without MongoDB:', error.message);
+    }
+})();
+
 // 导出MongoDB相关功能
 module.exports = {
     mongoose,                    // mongoose实例
