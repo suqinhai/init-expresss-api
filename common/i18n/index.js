@@ -78,17 +78,6 @@ const createMiddleware = () => {
   return middleware.handle(i18next);
 };
 
-
-// 初始化i18n
-(async () => {
-  try {
-    await initI18n();
-    console.log('i18n initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize i18n:', error);
-  }
-})();
-
 module.exports = {
   initI18n,
   getI18n,

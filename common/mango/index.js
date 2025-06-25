@@ -33,18 +33,11 @@ const config = {
 
         // 其他配置
         bufferCommands: false,      // 禁用mongoose缓冲
-        bufferMaxEntries: 0,        // 禁用mongoose缓冲
+        // bufferMaxEntries 在新版本中已被移除
         useNewUrlParser: true,      // 使用新的URL解析器
         useUnifiedTopology: true,   // 使用新的服务器发现和监控引擎
 
-        // 认证配置（如果需要）
-        ...(config.username && config.password && {
-            auth: {
-                username: config.username,
-                password: config.password
-            },
-            authSource: 'admin'
-        })
+        // 认证配置将在连接时动态添加
     }
 };
 
@@ -85,8 +78,21 @@ async function connectMongoDB() {
             database: config.dbName
         });
 
+        // 动态构建连接选项，包含认证配置
+        const connectionOptions = {
+            ...config.options,
+            // 如果有认证信息，添加认证配置
+            ...(config.username && config.password && {
+                auth: {
+                    username: config.username,
+                    password: config.password
+                },
+                authSource: 'admin'
+            })
+        };
+
         // 建立连接
-        mongoConnection = await mongoose.connect(connectionUri, config.options);
+        mongoConnection = await mongoose.connect(connectionUri, connectionOptions);
 
         logger.info('成功连接到 MongoDB 数据库!', {
             category: 'MONGODB',
@@ -133,10 +139,6 @@ async function disconnectMongoDB() {
 // MongoDB健康检查
 async function mongoHealthCheck() {
     try {
-        if (!mongoConnection) {
-            return { status: 'disconnected', message: 'MongoDB未连接' };
-        }
-
         // 检查连接状态
         const state = mongoose.connection.readyState;
         const stateMap = {
@@ -146,7 +148,7 @@ async function mongoHealthCheck() {
             3: 'disconnecting'
         };
 
-        if (state === 1) {
+        if (state === 1 && mongoConnection) {
             // 执行简单的ping操作
             await mongoose.connection.db.admin().ping();
             return {
@@ -154,6 +156,12 @@ async function mongoHealthCheck() {
                 message: 'MongoDB连接正常',
                 state: stateMap[state],
                 database: config.dbName
+            };
+        } else if (state === 0) {
+            return {
+                status: 'disconnected',
+                message: 'MongoDB未连接',
+                state: stateMap[state]
             };
         } else {
             return {
@@ -175,6 +183,27 @@ async function mongoHealthCheck() {
     }
 }
 
+// 安全的MongoDB操作包装器
+function createSafeMongoOperations() {
+    return {
+        mongoose: mongoose,
+        connection: mongoose.connection,
+        connectMongoDB,
+        disconnectMongoDB,
+        mongoHealthCheck,
+        config,
+        // 检查是否已连接
+        isConnected: () => mongoose.connection.readyState === 1,
+        // 安全的数据库操作
+        safeOperation: async (operation) => {
+            if (mongoose.connection.readyState !== 1) {
+                throw new Error('MongoDB未连接，无法执行操作');
+            }
+            return await operation();
+        }
+    };
+}
+
 // 添加连接事件监听器
 mongoose.connection.on('connected', () => {
     logger.info('Mongoose 连接已建立', { category: 'MONGODB' });
@@ -194,22 +223,5 @@ process.on('SIGINT', async () => {
     process.exit(0);
 });
 
-// 初始化MongoDB连接
-(async () => {
-    try {
-        await connectMongoDB();
-        console.log('MongoDB connection initialized successfully');
-    } catch (error) {
-        console.warn('MongoDB connection failed, continuing without MongoDB:', error.message);
-    }
-})();
-
 // 导出MongoDB相关功能
-module.exports = {
-    mongoose,                    // mongoose实例
-    connection: mongoose.connection, // 连接实例
-    connectMongoDB,             // 连接函数
-    disconnectMongoDB,          // 断开连接函数
-    mongoHealthCheck,           // 健康检查函数
-    config                      // 配置信息
-};
+module.exports = createSafeMongoOperations();

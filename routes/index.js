@@ -253,14 +253,26 @@ router.post('/cache-demo/clear', cache.clearRouteCache({
  */
 router.get('/mongodb-test', async function(req, res) {
   try {
-    const { mongoose, mongoHealthCheck } = req.mongodb;
+    // 检查MongoDB模块是否可用
+    if (!req.mongodb) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB模块未初始化',
+        error: 'MongoDB模块不可用，可能是连接失败或服务未启动',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const { mongoHealthCheck, isConnected, safeOperation } = req.mongodb;
 
     // 检查MongoDB连接状态
     const healthStatus = await mongoHealthCheck();
 
-    if (healthStatus.status === 'healthy') {
+    if (healthStatus.status === 'healthy' && isConnected()) {
       // 执行简单的数据库操作测试
-      const collections = await mongoose.connection.db.listCollections().toArray();
+      const collections = await safeOperation(async () => {
+        return await req.mongodb.mongoose.connection.db.listCollections().toArray();
+      });
 
       res.sendSuccess('MongoDB连接测试成功', {
         data: {
@@ -277,6 +289,7 @@ router.get('/mongodb-test', async function(req, res) {
         message: 'MongoDB连接异常',
         error: healthStatus.message,
         status: healthStatus.status,
+        state: healthStatus.state,
         timestamp: new Date().toISOString()
       });
     }
@@ -326,7 +339,17 @@ router.get('/mongodb-test', async function(req, res) {
  */
 router.post('/mongodb-test/create', async function(req, res) {
   try {
-    const { mongoose } = req.mongodb;
+    // 检查MongoDB模块是否可用
+    if (!req.mongodb || !req.mongodb.isConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB不可用',
+        error: 'MongoDB未连接或服务不可用',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    const { safeOperation } = req.mongodb;
 
     // 创建一个简单的测试集合和文档
     const testData = {
@@ -336,10 +359,12 @@ router.post('/mongodb-test/create', async function(req, res) {
       testId: Math.random().toString(36).substr(2, 9)
     };
 
-    // 使用原生MongoDB驱动创建文档
-    const result = await mongoose.connection.db
-      .collection('test_documents')
-      .insertOne(testData);
+    // 使用安全操作包装器创建文档
+    const result = await safeOperation(async () => {
+      return await req.mongodb.mongoose.connection.db
+        .collection('test_documents')
+        .insertOne(testData);
+    });
 
     res.sendSuccess('MongoDB测试文档创建成功', {
       data: {
