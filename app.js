@@ -11,17 +11,25 @@ var swaggerUi = require('swagger-ui-express');
 var morganLogger = require('morgan');  // 重命名morgan日志器，避免冲突
 var { requestLogger, logger } = require('./common/logger'); // 直接从logger模块导入
 
-var { sequelize, sendSuccess, sendError, sendBadRequest, sendUnauthorized, sendResponse, initI18n, createMiddleware } = require('./common/index')
+var { sequelize, mongodb, sendSuccess, sendError, sendBadRequest, sendUnauthorized, sendResponse, initI18n, createMiddleware } = require('./common/index')
 var { globalLimiter } = require('./middleware');
 
 var indexRouter = require('./routes/index');
 var app = express();
 
-// 初始化i18n
+// 初始化i18n和数据库连接
 (async () => {
   try {
     await initI18n();
     console.log('i18n initialized successfully');
+
+    // 初始化MongoDB连接
+    try {
+      await mongodb.connectMongoDB();
+      console.log('MongoDB connection initialized successfully');
+    } catch (error) {
+      console.warn('MongoDB connection failed, continuing without MongoDB:', error.message);
+    }
   } catch (error) {
     console.error('Failed to initialize i18n:', error);
   }
@@ -79,6 +87,7 @@ app.use(globalLimiter);
 // app.use(bodyParser.json());
 app.use(function (req, res, next) {
   res.sequelize = sequelize;
+  res.mongodb = mongodb;
   res.sendResponse = (status, success, message, options) => sendResponse(res, status, success, message, options);
   res.sendSuccess = (message, options) => sendSuccess(res, message, options);
   res.sendBadRequest = (message, options) => sendBadRequest(res, message, options);

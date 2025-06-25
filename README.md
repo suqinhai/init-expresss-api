@@ -11,7 +11,7 @@
 
 ### 🚀 现代化架构
 - **Express.js 4.18.2** - 高性能Node.js Web框架
-- **MySQL 8.0 + Sequelize ORM** - 强大的关系型数据库支持
+- **双数据库支持** - MySQL + Sequelize ORM (关系型数据) + MongoDB + Mongoose ODM (文档型数据)
 - **Redis 7** - 高性能缓存和会话存储
 - **JWT认证** - 安全的用户认证机制
 - **Swagger UI** - 自动生成的API文档
@@ -52,7 +52,8 @@ express-api/
 │   ├── rateLimit/      # 限流中间件
 │   └── validator/      # 验证中间件
 ├── common/             # 公共模块
-│   ├── mysql/          # 数据库连接
+│   ├── mysql/          # MySQL数据库连接
+│   ├── mango/          # MongoDB数据库连接
 │   ├── redis/          # Redis连接
 │   ├── logger/         # 日志系统
 │   ├── i18n/           # 国际化
@@ -70,8 +71,9 @@ express-api/
 
 - **Node.js** >= 16.0.0
 - **npm** >= 8.0.0
-- **MySQL** >= 8.0
-- **Redis** >= 6.0
+- **MySQL** >= 8.0 (关系型数据存储)
+- **MongoDB** >= 4.4 (可选，文档型数据存储)
+- **Redis** >= 6.0 (可选，缓存存储)
 - **Docker** (可选，用于容器化部署)
 
 ### 本地开发
@@ -92,7 +94,7 @@ npm install
 # 复制环境配置文件
 cp env/dev.env .env
 
-# 编辑配置文件，设置数据库和Redis连接信息
+# 编辑配置文件，设置MySQL、MongoDB和Redis连接信息
 nano .env
 ```
 
@@ -109,6 +111,7 @@ make dev
 - API服务: http://localhost:3000
 - API文档: http://localhost:3000/api-docs
 - 健康检查: http://localhost:3000/health
+- MongoDB测试: http://localhost:3000/mongodb-test
 
 ### Docker快速启动
 
@@ -210,11 +213,65 @@ Redis缓存支持多级TTL配置：
 - 动态语言切换
 - 错误消息本地化
 
+## 🗄️ 双数据库架构
+
+本项目支持MySQL和MongoDB双数据库并存，您可以根据不同的业务需求选择合适的数据库：
+
+### MySQL (关系型数据库)
+- **适用场景**: 结构化数据、事务处理、复杂关联查询
+- **ORM**: Sequelize
+- **连接配置**: `env/dev.env` 中的 `DB_*` 配置项
+- **使用方式**: 通过 `res.sequelize` 访问
+
+```javascript
+// 在路由中使用MySQL
+router.get('/users', async (req, res) => {
+  const users = await res.sequelize.models.User.findAll();
+  res.sendSuccess('获取用户列表成功', { data: users });
+});
+```
+
+### MongoDB (文档型数据库)
+- **适用场景**: 非结构化数据、灵活模式、高性能读写
+- **ODM**: Mongoose
+- **连接配置**: `env/dev.env` 中的 `MONGO_*` 配置项
+- **使用方式**: 通过 `res.mongodb` 访问
+
+```javascript
+// 在路由中使用MongoDB
+router.post('/logs', async (req, res) => {
+  const { mongoose } = res.mongodb;
+  const result = await mongoose.connection.db
+    .collection('logs')
+    .insertOne(req.body);
+  res.sendSuccess('日志保存成功', { data: result });
+});
+```
+
+### 环境配置示例
+```bash
+# MySQL配置
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASS=123456
+DB_NAME=testSxx
+
+# MongoDB配置
+MONGO_URI=mongodb://localhost:27017/testSxx
+MONGO_HOST=localhost
+MONGO_PORT=27017
+MONGO_DB_NAME=testSxx
+```
+
+### 健康检查
+系统会自动检查两个数据库的连接状态，访问 `/health` 端点查看详细状态。
+
 ## 📈 性能优化
 
 - **响应压缩**: gzip压缩减少传输大小
 - **静态资源缓存**: 智能缓存策略
-- **数据库连接池**: 高效的连接管理
+- **数据库连接池**: MySQL和MongoDB的高效连接管理
 - **Redis缓存**: 减少数据库查询
 - **集群模式**: 多进程负载均衡
 
@@ -243,7 +300,8 @@ Redis缓存支持多级TTL配置：
 
 - [ ] GraphQL支持
 - [ ] 微服务架构支持
-- [ ] 更多数据库支持 (PostgreSQL, MongoDB)
+- [x] 双数据库支持 (MySQL + MongoDB)
+- [ ] 更多数据库支持 (PostgreSQL)
 - [ ] 实时通信 (WebSocket)
 - [ ] 消息队列集成
 - [ ] 监控仪表板
