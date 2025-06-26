@@ -33,8 +33,8 @@ const config = {
 
         // 其他配置
         bufferCommands: false,      // 禁用mongoose缓冲
-        // bufferMaxEntries 在新版本中已被移除
-        useNewUrlParser: true,      // 使用新的URL解析器
+        // bufferMaxEntries 在新版本中已被移除, 已经被废弃
+        // useNewUrlParser: true,      // 使用新的URL解析器
         useUnifiedTopology: true,   // 使用新的服务器发现和监控引擎
 
         // 认证配置将在连接时动态添加
